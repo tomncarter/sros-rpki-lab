@@ -9,15 +9,20 @@ topology:
   nodes:
     R1:
       kind: vr-sros
-      #startup-config: configs/R1.conf
+      startup-config: configs/R1.txt
     R2:
       kind: vr-sros
-      #startup-config: configs/R2.conf
+      startup-config: configs/R2.txt
     RPKI:
       kind: linux
       image: nlnetlabs/routinator
-      mgmt_ipv4: 172.20.20.199
+      mgmt-ipv4: 172.20.20.199
       ports:
       - 80:8323
+      exec:
+      - ip address add 10.0.254.2/24 dev eth1
+      - ip address add 10.0.255.2/24 dev eth2
   links:
     - endpoints: ["R1:eth1", "R2:eth1"]
+    - endpoints: ["R1:eth2", "RPKI:eth1"]
+    - endpoints: ["R2:eth2", "RPKI:eth2"]

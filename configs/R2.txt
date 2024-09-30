@@ -1,0 +1,471 @@
+# TiMOS-B-24.7.R1 both/x86_64 Nokia 7750 SR Copyright (c) 2000-2024 Nokia.
+# All rights reserved. All use subject to applicable license agreements.
+# Built on Thu Jul 11 15:05:03 PDT 2024 by builder in /builds/247B/R1/panos/main/sros
+# Configuration format version 24.7 revision 0
+
+# Generated 2024-09-30T20:27:22.4Z by admin from 200::
+# Commit ID 3
+#   Committed 2024-09-30T20:26:13.0Z by admin (MD-CLI) from 200::
+
+configure {
+    card 1 {
+        card-type iom-1
+        mda 1 {
+            mda-type me12-100gb-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    policy-options {
+        prefix-list "allowed-bgp-ranges" {
+            prefix 0.0.0.0/0 type range {
+                start-length 8
+                end-length 24
+            }
+        }
+        policy-statement "permit-bgp-prefixes" {
+            entry 10 {
+                from {
+                    prefix-list ["allowed-bgp-ranges"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                to {
+                    protocol {
+                        name [bgp]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c1/1 {
+        admin-state enable
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-10g
+        }
+    }
+    port 1/1/c2/1 {
+        admin-state enable
+    }
+    router "Base" {
+        autonomous-system 15169
+        interface "AS15169-private" {
+            loopback
+            ipv4 {
+                primary {
+                    address 10.0.0.1
+                    prefix-length 24
+                }
+            }
+        }
+        interface "AS15169-public" {
+            loopback
+            ipv4 {
+                primary {
+                    address 8.8.8.8
+                    prefix-length 24
+                }
+            }
+        }
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 172.31.255.2
+                    prefix-length 32
+                }
+            }
+        }
+        interface "to-AS65536" {
+            port 1/1/c1/1
+            ipv4 {
+                primary {
+                    address 192.0.2.1
+                    prefix-length 31
+                }
+            }
+        }
+        interface "to-RPKI" {
+            admin-state enable
+            port 1/1/c2/1
+            ipv4 {
+                primary {
+                    address 10.0.255.1
+                    prefix-length 24
+                }
+            }
+        }
+        bgp {
+            group "eBGP-Peering" {
+                family {
+                    ipv4 true
+                }
+                origin-validation {
+                    ipv4 true
+                }
+                export {
+                    policy ["permit-bgp-prefixes"]
+                }
+            }
+            neighbor "192.0.2.0" {
+                group "eBGP-Peering"
+                local-address 192.0.2.1
+                peer-as 65536
+                local-as {
+                    as-number 15169
+                }
+            }
+        }
+        origin-validation {
+            rpki-session 10.0.255.2 {
+                admin-state enable
+                local-address 10.0.255.1
+                port 3323
+            }
+        }
+    }
+    system {
+        name "R2"
+        grpc {
+            admin-state enable
+            allow-unsecure-connection
+            gnmi {
+                auto-config-save true
+            }
+            rib-api {
+                admin-state enable
+            }
+        }
+        management-interface {
+            netconf {
+                auto-config-save true
+                listen {
+                    admin-state enable
+                }
+            }
+            snmp {
+                packet-size 9216
+                streaming {
+                    admin-state enable
+                }
+            }
+        }
+        bluetooth {
+            advertising-timeout 30
+        }
+        login-control {
+            ssh {
+                inbound-max-sessions 30
+            }
+        }
+        security {
+            aaa {
+                local-profiles {
+                    profile "administrative" {
+                        default-action permit-all
+                        entry 10 {
+                            match "configure system security"
+                            action permit
+                        }
+                        entry 20 {
+                            match "show system security"
+                            action permit
+                        }
+                        entry 30 {
+                            match "tools perform security"
+                            action permit
+                        }
+                        entry 40 {
+                            match "tools dump security"
+                            action permit
+                        }
+                        entry 50 {
+                            match "admin system security"
+                            action permit
+                        }
+                        entry 100 {
+                            match "configure li"
+                            action deny
+                        }
+                        entry 110 {
+                            match "show li"
+                            action deny
+                        }
+                        entry 111 {
+                            match "clear li"
+                            action deny
+                        }
+                        entry 112 {
+                            match "tools dump li"
+                            action deny
+                        }
+                        netconf {
+                            base-op-authorization {
+                                action true
+                                cancel-commit true
+                                close-session true
+                                commit true
+                                copy-config true
+                                create-subscription true
+                                delete-config true
+                                discard-changes true
+                                edit-config true
+                                get true
+                                get-config true
+                                get-data true
+                                get-schema true
+                                kill-session true
+                                lock true
+                                validate true
+                            }
+                        }
+                    }
+                    profile "default" {
+                        entry 10 {
+                            match "exec"
+                            action permit
+                        }
+                        entry 20 {
+                            match "exit"
+                            action permit
+                        }
+                        entry 30 {
+                            match "help"
+                            action permit
+                        }
+                        entry 40 {
+                            match "logout"
+                            action permit
+                        }
+                        entry 50 {
+                            match "password"
+                            action permit
+                        }
+                        entry 60 {
+                            match "show config"
+                            action deny
+                        }
+                        entry 65 {
+                            match "show li"
+                            action deny
+                        }
+                        entry 66 {
+                            match "clear li"
+                            action deny
+                        }
+                        entry 67 {
+                            match "tools dump li"
+                            action deny
+                        }
+                        entry 68 {
+                            match "state li"
+                            action deny
+                        }
+                        entry 70 {
+                            match "show"
+                            action permit
+                        }
+                        entry 75 {
+                            match "state"
+                            action permit
+                        }
+                        entry 80 {
+                            match "enable-admin"
+                            action permit
+                        }
+                        entry 90 {
+                            match "enable"
+                            action permit
+                        }
+                        entry 100 {
+                            match "configure li"
+                            action deny
+                        }
+                    }
+                }
+            }
+            snmp {
+                community "76HzdddhlPpRo1Vql+ZB5spLqccgYQ== hash2" {
+                    access-permissions r
+                    version v2c
+                }
+            }
+            ssh {
+                server-cipher-list-v2 {
+                    cipher 190 {
+                        name aes256-ctr
+                    }
+                    cipher 192 {
+                        name aes192-ctr
+                    }
+                    cipher 194 {
+                        name aes128-ctr
+                    }
+                    cipher 200 {
+                        name aes128-cbc
+                    }
+                    cipher 205 {
+                        name 3des-cbc
+                    }
+                    cipher 225 {
+                        name aes192-cbc
+                    }
+                    cipher 230 {
+                        name aes256-cbc
+                    }
+                }
+                client-cipher-list-v2 {
+                    cipher 190 {
+                        name aes256-ctr
+                    }
+                    cipher 192 {
+                        name aes192-ctr
+                    }
+                    cipher 194 {
+                        name aes128-ctr
+                    }
+                    cipher 200 {
+                        name aes128-cbc
+                    }
+                    cipher 205 {
+                        name 3des-cbc
+                    }
+                    cipher 225 {
+                        name aes192-cbc
+                    }
+                    cipher 230 {
+                        name aes256-cbc
+                    }
+                }
+                server-mac-list-v2 {
+                    mac 200 {
+                        name hmac-sha2-512
+                    }
+                    mac 210 {
+                        name hmac-sha2-256
+                    }
+                    mac 215 {
+                        name hmac-sha1
+                    }
+                    mac 220 {
+                        name hmac-sha1-96
+                    }
+                    mac 225 {
+                        name hmac-md5
+                    }
+                    mac 240 {
+                        name hmac-md5-96
+                    }
+                }
+                client-mac-list-v2 {
+                    mac 200 {
+                        name hmac-sha2-512
+                    }
+                    mac 210 {
+                        name hmac-sha2-256
+                    }
+                    mac 215 {
+                        name hmac-sha1
+                    }
+                    mac 220 {
+                        name hmac-sha1-96
+                    }
+                    mac 225 {
+                        name hmac-md5
+                    }
+                    mac 240 {
+                        name hmac-md5-96
+                    }
+                }
+            }
+            user-params {
+                attempts {
+                    count 64
+                }
+                local-user {
+                    user "admin" {
+                        password "$2y$10$TQrZlpBDra86.qoexZUzQeBXDY1FcdDhGWdD9lLxMuFyPVSm0OGy6"
+                        restricted-to-home false
+                        access {
+                            console true
+                            ftp true
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                        public-keys {
+                            rsa {
+                                rsa-key 31 {
+                                    key-value "AAAAB3NzaC1yc2EAAAADAQABAAABgQC7swvxAjR5vRFXmIdRi7QVZEDynOFF/u97ALo1PyF6dbSz/vV5UmgTKg3uq888fusl78b+u+4isZGO9AOeEFNUoPSm8A+6xowa/3SCk3jtdEy4xWva28T0cxk3HGdFt+aU4W3zSCyLvuCJrSiZ22o+G9/fl8lpn0b2BcBX0nuR/6zgVzGco8AgpXnMYMabM6C+VmwH2wKrSZrc+Hgsch4PYqXzB5KMupWVvBHvHM4G1+grnqz52OE/YtMPOWNzZwSS+DO1HoySPbt2oIklSlY2hHD6QJ+n51bduCJPxZK9xxGpK0Wnj/5P+c6nMCoOz/fQjrGoQwco1dkk6RXLyu2gz22Xz2aP1E+a/qGFTW1dOrd+A+wsvlqwZYw7RvAbPqP1pD8wMnANFq4DwYkcybpuN6O9PCs43jX1UnHAUqgpOTjfeYeiHlY0jO/JdYQruHKb7dolwxf4LTAutFvIh0Xr7NSJXKGx7bIi0icMO+p+q4c+9FqMC+zVgM81GiCNk8E="
+                                }
+                                rsa-key 32 {
+                                    key-value "AAAAB3NzaC1yc2EAAAADAQABAAABgQCy5LJFFlMo1n4HA/u6QgADHFFo80630AQ/l8vxOJObpVZN88wbmyTDtZh6DhW+ienndsKrW5c0p7idUZx9IUz2Do/LCsrkBKW6NEcccXJTJLLlynyc78herHAjHz/QX7TiDZbuiBVoUAN18F0m12aOxbl+84sOffO+vb6tx8UXinhVCExAm/SjnfcRPUlBXWshdL1LOtXdG/4MVIuMC1BGehe7SZ++UXmKrIwFyvgWgme/3s3jkEwDfNBK5ygDa4T5xWPKJcfShZn3On+yU9ySTwEbaFDJMmzTUR7moQe1riQktvCc8Di+431a8vfZOWX35ZjvYFDzuFB7+fVzDT9EDYE5Lagm+FhHMA4sPsNgqnEuLMLox7EJKIax8sVGOmDd4lLeXah7C6A1vRggA+OzJvBpJPqyLfrfCgYo4d77iH9gfRPm430gf1ZCNy9GeWabWYi+9OFGSsdt3mtv4orAmzZVYLWySpiwpffNDQ7JGZdb89fYi/QhxyDbuKUq1WE="
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+persistent-indices {
+    description "Persistent indices are maintained by the system and must not be modified."
+    vrtr-if-id {
+        router-name "Base" interface-name "AS15169-private" vrtr-id 1 if-index 4
+        router-name "Base" interface-name "AS15169-public" vrtr-id 1 if-index 5
+        router-name "Base" interface-name "to-AS65536" vrtr-id 1 if-index 3
+        router-name "Base" interface-name "to-RPKI" vrtr-id 1 if-index 2
+    }
+}
+
+# Finished 2024-09-30T20:27:22.4Z
