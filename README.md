@@ -2,6 +2,8 @@
 
 This project demonstrates the use of Containerlab to set up a Nokia SR-OS topology performing RPKI (Resource Public Key Infrastructure) validation. RPKI is a crucial security mechanism used to verify the legitimacy of IP address ownership in BGP routing, preventing route hijacking and other BGP-related attacks.
 
+This lab was based on the concept by JulioPDX [RPKI in the Lab](https://juliopdx.com/2023/01/02/rpki-in-the-lab/#getting-rpki-in-the-lab-with-routinator)
+
 ## Overview
 
 The project provides a reproducible Containerlab-based environment to emulate a network of Nokia SR-OS routers configured for RPKI validation. This lab allows testing and experimentation with RPKI in a controlled setting.
