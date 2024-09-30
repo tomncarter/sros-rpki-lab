@@ -1,0 +1,23 @@
+name: sros-rpki
+
+topology:
+  kinds:
+    vr-sros:
+      image: vrnetlab/vr-sros:24.7.R1
+      license: license-sros-24.txt
+
+  nodes:
+    R1:
+      kind: vr-sros
+      #startup-config: configs/R1.conf
+    R2:
+      kind: vr-sros
+      #startup-config: configs/R2.conf
+    RPKI:
+      kind: linux
+      image: nlnetlabs/routinator
+      mgmt_ipv4: 172.20.20.199
+      ports:
+      - 80:8323
+  links:
+    - endpoints: ["R1:eth1", "R2:eth1"]

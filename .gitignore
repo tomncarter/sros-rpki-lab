@@ -1,0 +1,6 @@
+clab-sros-rpki
+license*
+authorized_keys
+topology-data.json
+ansible-inventory.yml
+*.bak
